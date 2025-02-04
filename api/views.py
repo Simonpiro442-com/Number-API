@@ -27,16 +27,24 @@ def is_armstrong(n):
     power = len(digits)
     return sum([d ** power for d in digits]) == abs(n)
 
+from django.http import JsonResponse
+import requests
+
 def classify_number(request):
     number_param = request.GET.get('number', None)
+    
+    # Check if the number is provided
+    if number_param is None:
+        return JsonResponse({
+            "error": "Number parameter is missing"
+        }, status=400)
 
     try:
         number = int(number_param)
     except (ValueError, TypeError):
         return JsonResponse({
-            "number": number_param,
-            "error": True
-            }, status=400)
+            "error": "Invalid number provided"
+        }, status=400)
 
     prime = is_prime(number)
     perfect = is_perfect(number)
@@ -46,7 +54,7 @@ def classify_number(request):
     if armstrong:
         properties = ["armstrong", "even"] if number % 2 == 0 else ["armstrong", "odd"]
     else:
-        properties = ["even"] if number % 2 == 0 else["odd"]
+        properties = ["even"] if number % 2 == 0 else ["odd"]
 
     fun_fact = "No fact available"
     try:
@@ -65,5 +73,5 @@ def classify_number(request):
         "digit_sum": digit_sum,
         "fun_fact": fun_fact
     }
-    
+
     return JsonResponse(result)
