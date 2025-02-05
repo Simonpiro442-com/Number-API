@@ -1,76 +1,73 @@
 from django.http import JsonResponse
-import math
 import requests
 
-# Helper functions
 def is_prime(n):
-    if n < 2 or not n.is_integer():
+    """Check if n is a prime number."""
+    if n <= 1 or not n.is_integer():  # Prime numbers are positive integers greater than 1
         return False
     n = int(n)
-    for i in range(2, int(math.sqrt(n)) + 1):
+    for i in range(2, int(n**0.5) + 1):
         if n % i == 0:
             return False
     return True
 
 def is_perfect(n):
-    if n < 1 or not n.is_integer():
+    """Determine if n is a perfect number (sum of proper divisors equals n)."""
+    if n < 2 or not n.is_integer():  # Only positive integers can be perfect
         return False
     n = int(n)
-    divisors_sum = sum(i for i in range(1, n) if n % i == 0)
-    return divisors_sum == n
+    divisors = [1]
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0:
+            divisors.append(i)
+            if i != n // i:
+                divisors.append(n // i)
+    return sum(divisors) == n
 
 def is_armstrong(n):
-    if not n.is_integer():
+    """Check if n is an Armstrong (narcissistic) number."""
+    if not n.is_integer():  # Armstrong numbers are only valid for whole numbers
         return False
     n = int(n)
     digits = [int(d) for d in str(abs(n))]
     power = len(digits)
-    return sum(d ** power for d in digits) == abs(n)
+    return sum([d ** power for d in digits]) == abs(n)
 
 def classify_number(request):
+    """
+    API endpoint to classify a number.
+    URL format: /api/classify-number?number=371
+    """
     number_param = request.GET.get('number', None)
-
-    # Handle invalid input
+    
+    # Validate input: must be convertible to a float
     try:
-        number = float(number_param)
+        number = float(number_param)  # Accept floats
     except (ValueError, TypeError):
         return JsonResponse({
-            "number": number_param,  # Always include the invalid input here
+            "number": number_param,
             "error": True
-        }, status=400, content_type="application/json")
-
-    if abs(number) > 10**6:  # You can set the max threshold here
-        return JsonResponse({
-            "number": str(number),
-            "error": "Number too large, try a smaller value"
-        }, status=400, content_type="application/json")
-
-    if number < 0:
-        return JsonResponse({
-            "number": number,
-            "error": "Negative numbers cannot have certain properties like armstrong"
-        }, status=400, content_type="application/json")
-
-    # Process number properties
+        }, status=400)
+    
+    # Calculate mathematical properties
     prime = is_prime(number)
     perfect = is_perfect(number)
     armstrong = is_armstrong(number)
-    properties = ["even"] if number % 2 == 0 else ["odd"]
-
-    if number == 0:
+    digit_sum = sum([int(d) for d in str(abs(int(number)))]) if number.is_integer() else None
+    
+    # Determine properties list based on Armstrong status and parity
+    properties = []
+    if number % 2 == 0:
         properties.append("even")
-        fun_fact = "0 is neither prime nor perfect."
-    elif number == 1:
+    else:
         properties.append("odd")
-        fun_fact = "1 is neither prime nor perfect."
-    elif armstrong:
+    
+    if armstrong:
         properties.append("armstrong")
-  
-    digit_sum = sum(int(d) for d in str(abs(int(number)))) if number.is_integer() else None
 
-    # Get fun fact (for positive integers only)
+    # Fetch a fun fact from the Numbers API (only for positive integers)
     fun_fact = "No fact available"
-    if number >= 0 and number.is_integer() and not (100 <= abs(number) <= 999):
+    if number >= 0 and number.is_integer():
         try:
             response = requests.get(f"http://numbersapi.com/{int(number)}/math?json")
             if response.status_code == 200:
@@ -79,14 +76,14 @@ def classify_number(request):
         except Exception:
             pass
 
-    # Return valid JSON response in the desired format
+    # Build the JSON response as per the specification
     result = {
         "number": number,
         "is_prime": prime,
         "is_perfect": perfect,
         "properties": properties,
-        "digit_sum": digit_sum,  # sum of its digits
+        "digit_sum": digit_sum,
         "fun_fact": fun_fact
     }
-
-    return JsonResponse(result, status=200, content_type="application/json")
+    
+    return JsonResponse(result, status=200)  # Always return 200 status code

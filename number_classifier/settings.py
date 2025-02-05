@@ -28,6 +28,7 @@ DEBUG = True
 ALLOWED_HOSTS = [ 'classify-e2e8gxb5aec6fmhn.azurewebsites.net',
     'classify-e2e8gxb5aec6fmhn.canadacentral-01.azurewebsites.net',
     'localhost',
+    '127.0.0.1',
     ]
 
 
