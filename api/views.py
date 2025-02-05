@@ -35,7 +35,7 @@ def classify_number(request):
         number = float(number_param)
     except (ValueError, TypeError):
         return JsonResponse({
-            "number": number_param,  # Include the invalid input
+            "number": str(number_param) if number_param is not None else "None",  
             "error": "Invalid input, not a number"
         }, status=400, content_type="application/json")
 
