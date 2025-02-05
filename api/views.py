@@ -4,59 +4,65 @@ import requests
 
 # Helper functions
 def is_prime(n):
-    if n < 2:
+    if n < 2 or not n.is_integer():
         return False
+    n = int(n)
     for i in range(2, int(math.sqrt(n)) + 1):
         if n % i == 0:
             return False
     return True
 
 def is_perfect(n):
-    divisors_sum = sum(i for i in range(1, abs(n)//2 + 1) if n % i == 0)
-    return divisors_sum == abs(n)
+    if n < 1 or not n.is_integer():
+        return False
+    n = int(n)
+    divisors_sum = sum(i for i in range(1, n) if n % i == 0)
+    return divisors_sum == n
 
 def is_armstrong(n):
+    if not n.is_integer():
+        return False
+    n = int(n)
     digits = [int(d) for d in str(abs(n))]
     power = len(digits)
     return sum(d ** power for d in digits) == abs(n)
 
 def classify_number(request):
-    # Retrieve number parameter from GET
     number_param = request.GET.get('number', None)
 
-    # Try to handle float or integer input correctly
+    # Handle invalid input
     try:
-        number = float(number_param)  # Can handle integers and floats
+        number = float(number_param)
     except (ValueError, TypeError):
-        # If conversion fails, return error response
         return JsonResponse({
-            "number": number_param,
+            "number": number_param,  # Include the invalid input
             "error": "Invalid input, not a number"
-        }, status=400)
+        }, status=400, content_type="application/json")
 
-    # If number is valid, proceed with classification
-    prime = is_prime(int(number))  # Integer conversion for prime check
-    perfect = is_perfect(int(number))  # Integer conversion for perfect number check
-    armstrong = is_armstrong(int(number))  # Integer conversion for Armstrong check
-    digit_sum = sum([int(d) for d in str(abs(number))])  # Sum of digits
-
-    # Determine number properties
+    # Process number properties
+    prime = is_prime(number)
+    perfect = is_perfect(number)
+    armstrong = is_armstrong(number)
+    properties = ["even"] if number % 2 == 0 else ["odd"]
+    
     if armstrong:
-        properties = ["armstrong", "even"] if number % 2 == 0 else ["armstrong", "odd"]
-    else:
-        properties = ["even"] if number % 2 == 0 else ["odd"]
+        properties.append("armstrong")
 
-    # Get fun fact from Numbers API
+    # Calculate digit sum (only for integers)
+    digit_sum = sum(int(d) for d in str(abs(int(number)))) if number.is_integer() else None
+
+    # Get fun fact (for positive integers only)
     fun_fact = "No fact available"
-    try:
-        response = requests.get(f"http://numbersapi.com/{int(abs(number))}/math?json")
-        if response.status_code == 200:
-            data = response.json()
-            fun_fact = data.get("text", fun_fact)
-    except Exception:
-        pass
+    if number >= 0 and number.is_integer():
+        try:
+            response = requests.get(f"http://numbersapi.com/{int(number)}/math?json")
+            if response.status_code == 200:
+                data = response.json()
+                fun_fact = data.get("text", fun_fact)
+        except Exception:
+            pass
 
-    # Return valid response with proper status and data
+    # Return valid JSON response
     result = {
         "number": number,
         "is_prime": prime,
@@ -66,5 +72,4 @@ def classify_number(request):
         "fun_fact": fun_fact
     }
 
-    return JsonResponse(result, status=200)
-
+    return JsonResponse(result, status=200, content_type="application/json")
