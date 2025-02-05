@@ -79,13 +79,13 @@ def classify_number(request):
         except Exception:
             pass
 
-    # Return valid JSON response
+    # Return valid JSON response in the desired format
     result = {
         "number": number,
         "is_prime": prime,
         "is_perfect": perfect,
         "properties": properties,
-        "digit_sum": digit_sum,
+        "digit_sum": digit_sum,  # sum of its digits
         "fun_fact": fun_fact
     }
 
