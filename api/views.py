@@ -39,21 +39,38 @@ def classify_number(request):
             "error": "Invalid input, not a number"
         }, status=400, content_type="application/json")
 
+    if abs(number) > 10**6:  # You can set the max threshold here
+        return JsonResponse({
+            "number": str(number),
+            "error": "Number too large, try a smaller value"
+        }, status=400, content_type="application/json")
+
+    if number < 0:
+        return JsonResponse({
+            "number": number,
+            "error": "Negative numbers cannot have certain properties like armstrong"
+        }, status=400, content_type="application/json")
+
     # Process number properties
     prime = is_prime(number)
     perfect = is_perfect(number)
     armstrong = is_armstrong(number)
     properties = ["even"] if number % 2 == 0 else ["odd"]
-    
-    if armstrong:
-        properties.append("armstrong")
 
-    # Calculate digit sum (only for integers)
+    if number == 0:
+        properties.append("even")
+        fun_fact = "0 is neither prime nor perfect."
+    elif number == 1:
+        properties.append("odd")
+        fun_fact = "1 is neither prime nor perfect."
+    elif armstrong:
+        properties.append("armstrong")
+  
     digit_sum = sum(int(d) for d in str(abs(int(number)))) if number.is_integer() else None
 
     # Get fun fact (for positive integers only)
     fun_fact = "No fact available"
-    if number >= 0 and number.is_integer():
+    if number >= 0 and number.is_integer() and not (100 <= abs(number) <= 999):
         try:
             response = requests.get(f"http://numbersapi.com/{int(number)}/math?json")
             if response.status_code == 200:
