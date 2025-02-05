@@ -35,8 +35,8 @@ def classify_number(request):
         number = float(number_param)
     except (ValueError, TypeError):
         return JsonResponse({
-            "number": number_param if number_param is not None else "None",  # Include invalid input
-            "error": "Invalid input, not a number"
+            "number": number_param,  # Always include the invalid input here
+            "error": True
         }, status=400, content_type="application/json")
 
     if abs(number) > 10**6:  # You can set the max threshold here
